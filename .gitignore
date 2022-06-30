@@ -1,0 +1,8 @@
+.idea
+selenium-server-4.3.0.jar
+jenkins.war
+venv
+__pycache__/
+chromedriver.exe
+geckodriver.exe
+msedgedriver.exe

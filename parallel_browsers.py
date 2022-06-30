@@ -1,55 +1,51 @@
-import time
-from threading import Thread
 import pytest
+
 from selenium import webdriver
+from selenium.webdriver import Keys
+from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.firefox.options import Options as FireFoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
 
-browsers = [
-    {
-        "platform": "Windows 7 64-bit",
-        # "browserName": "Internet Explorer",
-        "browserName": "Firefox",
-        "version": "10",
-        "name": "Python Parallel"
-    },
-    {
-        "platform": "Windows 8.1",
-        "browserName": "Brave",
-        "version": "50",
-        "name": "Python Parallel"
-    },
-]
 
-
-browsers_waiting = []
-
-
-def get_browser(browser_data):
+@pytest.fixture()
+def driver():
     firefox_driver_binary = "./drivers/geckodriver"
     ser_firefox = FirefoxService(firefox_driver_binary)
+    firefox_options = FireFoxOptions()
 
     brave_path = "/usr/bin/brave-browser"
     options = webdriver.ChromeOptions()
     options.binary_location = brave_path
 
-    if str.lower(browser_data["browserName"]) == "firefox-webdriver":
+    browser_name = 'firefox'
+
+    # if isinstance(browserName,list):
+    #     for browser_name in browserName:
+    if browser_name == "firefox-webdriver":
         driver = webdriver.Firefox(service=ser_firefox)
-    elif str.lower(browser_data["browserName"]) == "firefox":
+    elif browser_name == "firefox":
         dc = {
             "browserName": "firefox",
-            "platformName": "LINUX"
+            # "browserVersion": "101.0.1(x64)",
+            "platformName": "Windows 11"
         }
-        driver = webdriver.Remote("http://localhost:4444", desired_capabilities=dc)
+        driver = webdriver.Remote("http://localhost:4723", desired_capabilities=dc, options=firefox_options)
 
-    elif str.lower(browser_data["browserName"]) == "brave":
+    elif browser_name == "brave":
         dc = {
             "browserName": "chrome",
-            "platformName": "LINUX"
+            "platformName": "Windows 11"
         }
         driver = webdriver.Remote("http://localhost:4444", desired_capabilities=dc, options=options)
 
-    elif str.lower(browser_data["browserName"]) == "firefox-mobile":
+    elif browser_name == "chrome":
+        dc = {
+            "browserName": "chrome",
+            "platformName": "Windows 11"
+        }
+        driver = webdriver.Remote("http://localhost:4444", desired_capabilities=dc)
+
+    elif browser_name == "firefox-mobile":
         firefox_options = FireFoxOptions()
         firefox_options.add_argument("--width=375")
         firefox_options.add_argument("--height=812")
@@ -60,7 +56,7 @@ def get_browser(browser_data):
 
         driver = webdriver.Firefox(service=ser_firefox, options=firefox_options)
 
-    elif str.lower(browser_data["browserName"]) == "android":
+    elif browser_name == "android-emulator":
         dc = {
             "platformName": "Android",
             "platformVersion": "8.1.0",
@@ -71,57 +67,23 @@ def get_browser(browser_data):
             # "app": "com.android.chrome",
             "browserName": "Chrome"
         }
+        driver = webdriver.Remote("http://localhost:4723/wd/hub", dc)
+
+    elif browser_name == "android-phone":
+        dc = {
+            "platformName": "Android",
+            "platformVersion": "11.0.0",
+            "deviceName": "1aaa4ea80404",
+            "automationName": "Appium",
+            "browserName": "Chrome"
+        }
 
         driver = webdriver.Remote("http://localhost:4723/wd/hub", dc)
     else:
         raise Exception("driver doesn't exists")
-
-    return driver
-
-
-def get_browser_and_wait(browser_data):
-
-    print ("starting %s\n" % browser_data["browserName"])
-
-    browser = get_browser(browser_data)
-
-    # browser.get("http://crossbrowsertesting.com")
-    browser.get("http://www.google.com")
+    yield driver
+    driver.close()
 
 
-    browsers_waiting.append({"data": browser_data, "driver": browser})
-
-    # browsers_waiting.append(browser)
-
-
-    print ("%s ready" % browser_data["browserName"])
-
-    while len(browsers_waiting) < len(browsers):
-
-        print ("working on %s.... please wait" % browser_data["browserName"])
-
-        # browser.get("http://crossbrowsertesting.com")
-        browser.get("http://www.google.com")
-
-
-    time.sleep(3)
-
-
-threads = []
-for i, browser in enumerate(browsers):
-
-    thread = Thread(target=get_browser_and_wait, args=[browser])
-
-    threads.append(thread)
-
-    thread.start()
-
-for thread in threads:
-
-    thread.join()
-
-    print("all browsers ready")
-
-    for i, b in enumerate(browsers_waiting):
-        print("browser %s's title: %s" % (b["data"]["name"], b["driver"].title))
-        b["driver"].close()
+def test_title(driver):
+    driver.get("https://www.google.com/")
