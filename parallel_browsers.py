@@ -29,7 +29,7 @@ def driver():
             # "browserVersion": "101.0.1(x64)",
             "platformName": "Windows 11"
         }
-        driver = webdriver.Remote("http://localhost:4723", desired_capabilities=dc, options=firefox_options)
+        driver = webdriver.Remote("http://localhost:4444", desired_capabilities=dc, options=firefox_options)
 
     elif browser_name == "brave":
         dc = {
